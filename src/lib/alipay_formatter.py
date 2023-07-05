@@ -29,20 +29,10 @@ def alipay_format(filepath):
 
         df_bookkeep['交易时间'] = pd.to_datetime(
             df_bookkeep['交易时间'], format='%Y/%m/%d %H:%M:%S')
-        df_bookkeep['金额(元)'] = pd.to_numeric(df_bookkeep['金额(元)'])
-        df_bookkeep['收/支'] = df_bookkeep['收/支'].replace('不计收支', '/')
+        df_bookkeep['金额(元)'] = pd.to_numeric(df_bookkeep['金额(元)'], errors="coerce")
         df_bookkeep['类型'] = np.nan
-        df_bookkeep['交易来源'] = '支付宝'
+        df_bookkeep['支付方式'] = '支付宝'
         df_bookkeep['备注'] = np.nan
-        df_bookkeep['月度'] = df_bookkeep['交易时间'].dt.strftime('%Y-%m')
-
-        def process_amount(row):
-            amount = row['金额(元)']
-            if row['收/支'] == '收入':
-                return amount
-            else:
-                return -amount
-
-        df_bookkeep['开销'] = df_bookkeep.apply(process_amount, axis=1)
+        df_bookkeep['收/支'] = df_bookkeep['收/支'].replace('不计收支', '/')
 
     return df_bookkeep

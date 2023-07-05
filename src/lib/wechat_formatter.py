@@ -26,17 +26,7 @@ def wechat_format(filepath):
         df_bookkeep['金额(元)'] = pd.to_numeric(
             df_bookkeep['金额(元)'].str.replace('¥', ''), errors="coerce")
         df_bookkeep['类型'] = np.nan
-        df_bookkeep['交易来源'] = '微信支付'
+        df_bookkeep['支付方式'] = '微信支付'
         df_bookkeep['备注'] = np.nan
-        df_bookkeep['月度'] = df_bookkeep['交易时间'].dt.strftime('%Y-%m')
-
-        def process_amount(row):
-            amount = row['金额(元)']
-            if row['收/支'] == '收入':
-                return amount
-            else:
-                return -amount
-
-        df_bookkeep['开销'] = df_bookkeep.apply(process_amount, axis=1)
 
     return df_bookkeep
