@@ -1,6 +1,6 @@
 log
 __pycache__
-*.csv
 .env
 node_modules
-dist
+out/*
+data-source/*
