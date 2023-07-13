@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { parseStream } from "fast-csv";
-import type { IWechatBillRow, IBookKeepingRow } from "./types";
+import type { IWechatBillRow, IBookKeepingRow } from "../types";
 
 export async function wechatPayFormatter(
   sourceFilePath: string

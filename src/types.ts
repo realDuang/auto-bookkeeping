@@ -43,14 +43,16 @@ export interface IBookKeepingRow {
 }
 
 export enum RecordType {
-  餐饮,
-  住房,
-  交通,
-  生活,
-  娱乐,
-  人情,
-  交易,
-  礼物,
-  旅行,
-  工资,
+  餐饮 = "餐饮",
+  住房 = "住房",
+  交通 = "交通",
+  生活 = "生活",
+  娱乐 = "娱乐",
+  人情 = "人情",
+  交易 = "交易",
+  礼物 = "礼物",
+  旅行 = "旅行",
+  工资 = "工资",
 }
+
+export type KeywordsMap = Record<string, RecordType>;

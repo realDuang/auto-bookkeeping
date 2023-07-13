@@ -1,7 +1,7 @@
 import * as iconv from "iconv-lite";
 import fs from "fs";
 import { parseString } from "fast-csv";
-import type { IAlipayBillRow, IBookKeepingRow } from "./types";
+import type { IAlipayBillRow, IBookKeepingRow } from "../types";
 
 export async function aliPayFormatter(
   sourceFilePath: string
