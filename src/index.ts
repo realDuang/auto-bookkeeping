@@ -6,33 +6,23 @@ import type { IBookKeepingRow } from "./types";
 
 import Excel from "exceljs";
 import { billPreprocessor } from "./preprocessor";
-
-const aliPayOriginPath = path.resolve(
-  __dirname,
-  "../data-source/origin-data/alipay_record.csv"
-);
-const wechatPayOriginPath = path.resolve(
-  __dirname,
-  "../data-source/origin-data/wechat_record.csv"
-);
-const destinationPath = path.resolve(__dirname, "../out/processed-data.csv");
-const templatePath = path.resolve(__dirname, "../template/template.xlsx");
-const xlsxDestinationPath = path.resolve(
-  __dirname,
-  "../out/processed-data.xlsx"
-);
+import {
+  destinationPath,
+  templatePath,
+  xlsxDestinationPath,
+} from "../config/settings.json";
 
 export async function main() {
-  const bookKeepRecords = await formatBillRecords({
-    aliPayOriginPath,
-    wechatPayOriginPath,
-  });
+  const bookKeepRecords = await formatBillRecords();
 
   const filteredBookKeepRecords = await billPreprocessor(bookKeepRecords);
 
-  const writeStream = fs.createWriteStream(destinationPath, {
-    encoding: "utf8",
-  });
+  const writeStream = fs.createWriteStream(
+    path.resolve(process.cwd(), destinationPath),
+    {
+      encoding: "utf8",
+    }
+  );
   writeToStream(writeStream, filteredBookKeepRecords, {
     headers: true,
     transform: (row: IBookKeepingRow) => {
@@ -43,7 +33,10 @@ export async function main() {
 }
 
 async function writeToXlsx(bookKeepRecords: IBookKeepingRow[]) {
-  copyFile(templatePath, xlsxDestinationPath);
+  copyFile(
+    path.resolve(process.cwd(), templatePath),
+    path.resolve(process.cwd(), xlsxDestinationPath)
+  );
 
   const options = {
     filename: xlsxDestinationPath,
