@@ -11,7 +11,7 @@
   "minKeyWordsFrequency": 2,
   "aliPayOriginPath": "data-source/origin-data/alipay_record.csv",
   "wechatPayOriginPath": "data-source/origin-data/wechat_record.csv",
-  "datasetPath": "data-source/dataset/202208-202301.csv",
+  "datasetPath": "data-source/dataset.csv",
 
   "destinationPath": "out/processed-data.csv",
   "templatePath": "data-source/template/template.xlsx",

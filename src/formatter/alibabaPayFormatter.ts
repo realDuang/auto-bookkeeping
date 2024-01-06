@@ -57,6 +57,6 @@ export async function aliPayFormatter(
       .on("end", () => {
         resolve(bookKeepingRows);
       })
-      .on("error", (error) => reject(error));
+      .on("error", (error: any) => reject(error));
   });
 }

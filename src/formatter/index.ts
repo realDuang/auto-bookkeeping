@@ -1,6 +1,6 @@
 import path from "path";
 import { wechatPayFormatter } from "./wechatPayFormatter";
-import { aliPayFormatter } from "./alipayFormatter";
+import { aliPayFormatter } from "./alibabaPayFormatter";
 import type { IBookKeepingRow } from "../types";
 import {
   aliPayOriginPath,

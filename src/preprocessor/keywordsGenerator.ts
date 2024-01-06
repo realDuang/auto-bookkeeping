@@ -77,6 +77,8 @@ async function getDataSetRecords(
       .on("end", () => {
         resolve(dataSetRows);
       })
-      .on("error", (error) => reject(error));
+      .on("error", (error) => {
+        reject(error)
+      })
   });
 }

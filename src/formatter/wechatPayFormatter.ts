@@ -1,5 +1,4 @@
 import fs from "fs";
-import path from "path";
 import { parseStream } from "fast-csv";
 import type { IWechatBillRow, IBookKeepingRow } from "../types";
 
@@ -35,6 +34,6 @@ export async function wechatPayFormatter(
       .on("end", () => {
         resolve(bookKeepingRows);
       })
-      .on("error", (error) => reject(error));
+      .on("error", (error: any) => reject(error));
   });
 }
