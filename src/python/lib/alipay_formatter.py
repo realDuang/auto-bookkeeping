@@ -1,4 +1,6 @@
-import re, csv, pandas as pd, numpy as np
+import re, csv
+import pandas as pd
+import numpy as np
 
 def alipay_format(filepath):
 
@@ -27,8 +29,7 @@ def alipay_format(filepath):
             columns={'交易创建时间': '交易时间', '金额（元）': '金额(元)'}
         )
 
-        df_bookkeep['交易时间'] = pd.to_datetime(
-            df_bookkeep['交易时间'], format='%Y/%m/%d %H:%M:%S')
+        df_bookkeep['交易时间'] = pd.to_datetime(df_bookkeep['交易时间'], format='%Y-%m-%d %H:%M:%S')
         df_bookkeep['金额(元)'] = pd.to_numeric(df_bookkeep['金额(元)'], errors="coerce")
         df_bookkeep['类型'] = np.nan
         df_bookkeep['支付方式'] = '支付宝'
