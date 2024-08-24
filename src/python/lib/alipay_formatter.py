@@ -24,7 +24,7 @@ def alipay_format(filepath):
             csvdata.append(l)
 
         csvreader = csv.DictReader(csvdata)
-        fieldnames = ['交易创建时间', '商品名称', '交易对方', '收/支', '金额（元）']
+        fieldnames = ['交易创建时间', '商品名称', '交易对方', '收/支', '金额（元）', '交易状态']
         df_bookkeep = pd.DataFrame(csvreader).loc[:, fieldnames].rename(
             columns={'交易创建时间': '交易时间', '金额（元）': '金额(元)'}
         )
@@ -35,5 +35,8 @@ def alipay_format(filepath):
         df_bookkeep['支付方式'] = '支付宝'
         df_bookkeep['备注'] = np.nan
         df_bookkeep['收/支'] = df_bookkeep['收/支'].replace('不计收支', '/')
+
+        # 仅保留交易成功的记录
+        df_bookkeep = df_bookkeep[df_bookkeep['交易状态'] == '交易成功']
 
     return df_bookkeep

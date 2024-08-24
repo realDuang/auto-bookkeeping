@@ -10,8 +10,8 @@
   },
   "minKeyWordsFrequency": 2,
   "aliPayOriginPath": "data-source/alipay_record.csv",
-  "wechatPayOriginPath": "",
-  "datasetPath": "",
+  "wechatPayOriginPath": "data-source/wechat_record.csv",
+  "datasetPath": "data-source/dataset.csv",
 
   "destinationPath": "out/processed-data.csv",
   "templatePath": "data-source/template/template.xlsx",
