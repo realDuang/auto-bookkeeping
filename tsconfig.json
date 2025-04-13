@@ -10,6 +10,6 @@
     "resolveJsonModule": true,
     "baseUrl": "."
   },
-  "include": ["src/**/*", "config/*.json", "src/types.ts"],
+  "include": ["src/**/*", "config/*.json", "src/typescript/types.ts"],
   "exclude": ["node_modules"]
 }

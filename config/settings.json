@@ -1,19 +1,29 @@
 {
-  "keywords": {
-    "超市": "餐饮",
-    "生鲜": "餐饮",
-    "便利店": "餐饮",
-
-    "公交": "交通",
-    "地铁": "交通",
-    "打车": "交通"
+  "datasource": {
+    "alipay_filename": "data/alipay_record.csv",
+    "wechatpay_filemame": "data/wechat_record.csv"
   },
-  "minKeyWordsFrequency": 2,
-  "aliPayOriginPath": "data-source/alipay_record.csv",
-  "wechatPayOriginPath": "data-source/wechat_record.csv",
-  "datasetPath": "data-source/dataset.csv",
 
-  "destinationPath": "out/processed-data.csv",
-  "templatePath": "data-source/template/template.xlsx",
-  "xlsxDestinationPath": "out/processed-data.xlsx"
+  "dataset": {
+    "path": "data/dataset.csv"
+  },
+  "output": {
+    "destination_path": "out",
+    "processed_filename": "processed-data.csv",
+
+    "similarity_threshold": 0.9
+  },
+
+  "rules": {
+    "min_frequency": 2,
+    "keywords": {
+      "超市": "餐饮",
+      "生鲜": "餐饮",
+      "便利店": "餐饮",
+
+      "公交": "交通",
+      "地铁": "交通",
+      "打车": "交通"
+    }
+  }
 }
