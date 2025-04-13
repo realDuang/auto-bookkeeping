@@ -2,7 +2,7 @@ import os
 import json
 import uuid
 import pandas as pd
-from typing import List, Dict, Any, Optional, Union
+from typing import List, Dict, Any
 from chromadb import Documents, EmbeddingFunction, Embeddings, PersistentClient
 from sentence_transformers import SentenceTransformer
 from pathlib import Path
@@ -47,8 +47,19 @@ class EnhancedEmbeddingFunction(EmbeddingFunction):
 
 
 class BookkeepingVectorDB:
+    _instance = None
+    _initialized = False
+
+    def __new__(cls, config_path: str = CONFIG_PATH):
+        if cls._instance is None:
+            cls._instance = super(BookkeepingVectorDB, cls).__new__(cls)
+        return cls._instance
 
     def __init__(self, config_path: str = CONFIG_PATH):
+        # 避免重复初始化
+        if BookkeepingVectorDB._initialized:
+            return
+
         # 加载配置
         self.config = self._load_config(config_path)
         # 将配置值设置到字典中
@@ -70,6 +81,8 @@ class BookkeepingVectorDB:
             metadata={"hnsw:space": "cosine"}
         )
 
+        BookkeepingVectorDB._initialized = True
+
     def _load_config(self, config_path: str) -> Dict[str, Any]:
         try:
             with open(config_path, 'r', encoding='utf-8') as f:
@@ -80,8 +93,9 @@ class BookkeepingVectorDB:
 
     def initialize_from_dataset(self) -> None:
         dataset_path = self.config.get("dataset", {}).get("path")
+        dataset_filename = self.config.get("dataset", {}).get("filename")
         dataset_file_path = os.path.join(os.path.dirname(
-            os.path.abspath('')), '..', dataset_path)
+            os.path.abspath('')), '..', dataset_path, dataset_filename)
 
         try:
             # 读取数据集
