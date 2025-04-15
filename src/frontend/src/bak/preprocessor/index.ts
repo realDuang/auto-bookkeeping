@@ -1,5 +1,5 @@
 import { RecordType, type IBookKeepingRow, type KeywordsMap } from "../types";
-import Settings from "../../../config/settings.json";
+import Settings from "../../../../../config/settings.json";
 import { keywordsGenerator } from "./keywordsGenerator";
 
 export async function billPreprocessor(

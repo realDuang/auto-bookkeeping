@@ -4,46 +4,16 @@ import uuid
 import pandas as pd
 import numpy as np
 from typing import List, Dict, Any
-from chromadb import Documents, EmbeddingFunction, Embeddings, PersistentClient
+from chromadb import PersistentClient
 from sentence_transformers import SentenceTransformer
+from models.EnhancedEmbedding import EnhancedEmbeddingFunction
 
-CONFIG_PATH = os.path.join(os.path.dirname(
-    os.path.abspath('')), '..', 'config', 'settings.json')
+# 相对路径调整，适应Flask结构
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CONFIG_PATH = os.path.join(BASE_DIR, '..', '..', 'config', 'settings.json')
 EMBEDDING_MODEL = "moka-ai/m3e-base"
-CHROMADB_PATH = os.path.join(os.path.dirname(
-    os.path.abspath('')), '..', 'lib', 'chromadb')
+CHROMADB_PATH = os.path.join(BASE_DIR, '..', '..', 'lib', 'chromadb')
 DATASET_COLLECTION_NAME = "bookkeeping-vector-db"
-
-
-class EnhancedEmbeddingFunction(EmbeddingFunction):
-    """
-    增强的嵌入函数，将输入文本转换为嵌入向量
-    """
-
-    def __init__(self, model):
-        self.model = model
-
-    def __call__(self, input: Documents) -> Embeddings:
-        # 预处理文本
-        processed_input = [self._preprocess_text(text) for text in input]
-        # 生成嵌入并归一化
-        batch_embeddings = self.model.encode(
-            processed_input, normalize_embeddings=True)
-        return batch_embeddings.tolist()
-
-    def _preprocess_text(self, text: str) -> str:
-        if not isinstance(text, str):
-            return str(text)
-
-        # 移除多余空格
-        text = ' '.join(text.split())
-
-        # 这里可以添加更多预处理步骤，如:
-        # - 移除特殊字符
-        # - 标准化商户名称
-        # - 分词等
-
-        return text
 
 
 class BookkeepingVectorDB:
@@ -90,11 +60,18 @@ class BookkeepingVectorDB:
             print(f"加载配置文件失败: {e}")
             raise Exception(f"无法加载配置文件，请检查文件路径和格式是否正确: {e}")
 
-    def initialize_from_dataset(self) -> None:
-        dataset_path = self.config.get("dataset", {}).get("path")
-        dataset_filename = self.config.get("dataset", {}).get("filename")
-        dataset_file_path = os.path.join(os.path.dirname(
-            os.path.abspath('')), '..', dataset_path, dataset_filename)
+    def initialize_from_dataset(self, dataset_file_path: str = None) -> None:
+        """
+        从数据集初始化向量数据库
+
+        Args:
+            dataset_file_path: 数据集文件路径，如果为None则使用配置文件中的路径
+        """
+        if dataset_file_path is None:
+            dataset_path = self.config.get("dataset", {}).get("path")
+            dataset_filename = self.config.get("dataset", {}).get("filename")
+            dataset_file_path = os.path.join(
+                BASE_DIR, '..', '..', dataset_path, dataset_filename)
 
         try:
             # 读取数据集
@@ -162,32 +139,58 @@ class BookkeepingVectorDB:
                 ids=ids
             )
 
+    def add_record(self, merchant: str, product: str, category: str) -> None:
+        """
+        添加单条记录到向量数据库
+
+        Args:
+            merchant: 商户名称
+            product: 商品名称
+            category: 类别
+        """
+        document = f"{merchant}:{product}"
+        metadata = {
+            "type": category,
+            "merchant": merchant,
+            "product": product
+        }
+
+        self.collection.add(
+            documents=[document],
+            metadatas=[metadata],
+            ids=[str(uuid.uuid4())]
+        )
+
+        print(f"成功添加记录: {merchant}:{product} -> {category}")
+
     def search_similar(self, merchant: str, product: str, top_k: int = 5) -> List[Dict[str, Any]]:
         """
         搜索相似记录
 
         Args:
-            merchant: 交易对方
+            merchant: 商户名称
             product: 商品名称
             top_k: 返回结果数量
 
         Returns:
             相似记录列表
         """
-        query = f"{merchant}:{product}"
+        # 创建查询文本
+        query_text = f"{merchant}:{product}"
+
+        # 执行查询
         results = self.collection.query(
-            query_texts=[query],
-            n_results=top_k,
-            include=["metadatas", "documents", "distances"]
+            query_texts=[query_text],
+            n_results=top_k
         )
 
         # 格式化结果
         formatted_results = []
-        if results['distances'] and results['distances'][0]:
-            for i in range(len(results['distances'][0])):
+        if results['documents'] and len(results['documents']) > 0:
+            for i in range(len(results['documents'][0])):
                 formatted_results.append({
-                    "category": results['metadatas'][0][i]['type'],
                     "document": results['documents'][0][i],
+                    "category": results['metadatas'][0][i]['type'],
                     "similarity": 1 - results['distances'][0][i]  # 转换距离为相似度
                 })
 
@@ -198,28 +201,41 @@ class BookkeepingVectorDB:
         预测交易类别
 
         Args:
-            merchant: 交易对方
+            merchant: 商户名称
             product: 商品名称
 
         Returns:
-            预测结果，包含类别和置信度
+            预测结果字典，包含类别、置信度和来源
         """
-        threshold = self.config.get(
-            "output", {}).get("similarity_threshold")
-        results = self.search_similar(merchant, product, top_k=1)
+        # 获取相似记录
+        similar_records = self.search_similar(merchant, product, top_k=3)
 
-        if results and results[0]['similarity'] >= threshold:
-            return {
-                "category": results[0]['category'],
-                "confidence": results[0]['similarity'],
-                "source": DATASET_COLLECTION_NAME
-            }
-        else:
+        # 如果没有找到相似记录，返回空结果
+        if not similar_records:
             return {
                 "category": None,
                 "confidence": 0.0,
-                "source": "unknown"
+                "source": "vector_db"
             }
+
+        # 使用相似度最高的记录作为预测结果
+        best_match = similar_records[0]
+
+        # 如果相似度低于阈值，返回空结果
+        threshold = float(self.config.get("similarity_threshold", 0.7))
+        if best_match['similarity'] < threshold:
+            return {
+                "category": None,
+                "confidence": best_match['similarity'],
+                "source": "vector_db"
+            }
+
+        # 返回预测结果
+        return {
+            "category": best_match['category'],
+            "confidence": best_match['similarity'],
+            "source": "vector_db"
+        }
 
     def get_all_categories(self) -> List[str]:
         """

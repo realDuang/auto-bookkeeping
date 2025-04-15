@@ -33,7 +33,7 @@ Auto-Bookkeeping 是一个智能账单管理系统，能够自动处理来自微
 2. 安装依赖包：
 
 ```bash
-pip install pandas numpy scikit-learn matplotlib plotly sentence-transformers chromadb jupyter
+pip install pandas chromadb sentence-transformers tqdm xgboost scikit-learn numpy
 ```
 
 ### 数据准备

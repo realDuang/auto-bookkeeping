@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { parseStream } from "fast-csv";
 import type { IBookKeepingRow, RecordType } from "../types";
-import { datasetPath, minKeyWordsFrequency } from "../../../config/settings.json";
+import { datasetPath, minKeyWordsFrequency } from "../../../../../config/settings.json";
 
 export async function keywordsGenerator(): Promise<Record<string, RecordType>> {
   const characterKeywords: Record<string, RecordType> = {};

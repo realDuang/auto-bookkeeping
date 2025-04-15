@@ -5,7 +5,7 @@ import type { IBookKeepingRow } from "../types";
 import {
   aliPayOriginPath,
   wechatPayOriginPath,
-} from "../../../config/settings.json";
+} from "../../../../../config/settings.json";
 
 export async function formatBillRecords(): Promise<IBookKeepingRow[]> {
   let aliPayRecords: IBookKeepingRow[] = [];

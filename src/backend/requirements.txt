@@ -1,0 +1,10 @@
+Flask
+pandas
+requests
+numpy
+scikit-learn
+tensorflow
+chromadb
+sentence-transformers
+tqdm
+xgboost

@@ -10,7 +10,7 @@ import {
   destinationPath,
   templatePath,
   xlsxDestinationPath,
-} from "../../config/settings.json";
+} from "../../../../config/settings.json";
 
 export async function main() {
   const bookKeepRecords = await formatBillRecords();
