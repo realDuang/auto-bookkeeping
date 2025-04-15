@@ -1,8 +1,6 @@
 {
   "datasource": {
-    "path": "data/source",
-    "alipay_filename": "alipay_record.csv",
-    "wechatpay_filemame": "wechat_record.csv"
+    "path": "data/source"
   },
 
   "dataset": {
@@ -13,7 +11,7 @@
   "output": {
     "path": "out",
     "merged_filename": "merged_data.csv",
-    "processed_filename": "processed-data.csv",
+    "processed_filename": "processed_data.csv",
     "similarity_threshold": 0.9
   },
 

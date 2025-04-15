@@ -4,46 +4,16 @@ import uuid
 import pandas as pd
 import numpy as np
 from typing import List, Dict, Any
-from chromadb import Documents, EmbeddingFunction, Embeddings, PersistentClient
+from chromadb import PersistentClient
 from sentence_transformers import SentenceTransformer
+from utils.embedding import EnhancedEmbeddingFunction
 
 CONFIG_PATH = os.path.join(os.path.dirname(
     os.path.abspath('')), '..', 'config', 'settings.json')
 EMBEDDING_MODEL = "moka-ai/m3e-base"
 CHROMADB_PATH = os.path.join(os.path.dirname(
-    os.path.abspath('')), '..', 'lib', 'chromadb')
+    os.path.abspath('')), '..', 'models', 'lib', 'chromadb')
 DATASET_COLLECTION_NAME = "bookkeeping-vector-db"
-
-
-class EnhancedEmbeddingFunction(EmbeddingFunction):
-    """
-    增强的嵌入函数，将输入文本转换为嵌入向量
-    """
-
-    def __init__(self, model):
-        self.model = model
-
-    def __call__(self, input: Documents) -> Embeddings:
-        # 预处理文本
-        processed_input = [self._preprocess_text(text) for text in input]
-        # 生成嵌入并归一化
-        batch_embeddings = self.model.encode(
-            processed_input, normalize_embeddings=True)
-        return batch_embeddings.tolist()
-
-    def _preprocess_text(self, text: str) -> str:
-        if not isinstance(text, str):
-            return str(text)
-
-        # 移除多余空格
-        text = ' '.join(text.split())
-
-        # 这里可以添加更多预处理步骤，如:
-        # - 移除特殊字符
-        # - 标准化商户名称
-        # - 分词等
-
-        return text
 
 
 class BookkeepingVectorDB:
@@ -118,41 +88,41 @@ class BookkeepingVectorDB:
             print(f"初始化数据库失败: {e}")
 
     def _add_batch(self, df: pd.DataFrame) -> None:
-        """
-        批量添加记录到向量数据库
-
-        Args:
-            df: 包含记录的DataFrame
-        """
         documents = []
         metadatas = []
         ids = []
 
         for _, row in df.iterrows():
-            # 确保必要的列存在
-            if '交易对方' in df.columns and '商品名称' in df.columns and '类型' in df.columns:
-                merchant = str(row['交易对方']) if not pd.isna(row['交易对方']) else ""
-                product = str(row['商品名称']) if not pd.isna(row['商品名称']) else ""
-                category = str(row['类型']) if not pd.isna(row['类型']) else ""
+            merchant = str(row['交易对方']) if not pd.isna(row['交易对方']) else ""
+            product = str(row['商品名称']) if not pd.isna(row['商品名称']) else ""
+            category = str(row['类型']) if not pd.isna(row['类型']) else ""
+            pay_type = str(row['支付方式']) if not pd.isna(row['支付方式']) else ""
+            pay_time = str(row['交易时间']) if not pd.isna(row['交易时间']) else ""
+            amount = str(row['金额(元)']) if not pd.isna(row['金额(元)']) else ""
+            i_o = str(row['收/支']) if not pd.isna(row['收/支']) else ""
+            remark = str(row['备注']) if not pd.isna(row['备注']) else ""
 
-                # 跳过没有类型的记录
-                if not category:
-                    continue
+            # 跳过没有类型的记录
+            if not category:
+                continue
 
-                # 创建文档文本（商户:商品格式）
-                document = f"{merchant}:{product}"
-                documents.append(document)
+            # 创建元数据
+            metadata = {
+                "type": category,
+                "merchant": merchant,
+                "product": product,
+                "pay_type": pay_type,
+                "pay_time": pay_time,
+                "amount": amount,
+                "i_o": i_o,
+                "remark": remark
+            }
+            metadatas.append(metadata)
 
-                # 创建元数据
-                metadata = {
-                    "type": category,
-                    "merchant": merchant,
-                    "product": product
-                }
-                metadatas.append(metadata)
+            document = f"{pay_type}{i_o}:{merchant}:{product}"
+            documents.append(document)
 
-                # 生成唯一ID
-                ids.append(str(uuid.uuid4()))
+            ids.append(str(uuid.uuid4()))
 
         # 批量添加到集合
         if documents:
@@ -175,6 +145,7 @@ class BookkeepingVectorDB:
             相似记录列表
         """
         query = f"{merchant}:{product}"
+
         results = self.collection.query(
             query_texts=[query],
             n_results=top_k,
@@ -193,7 +164,7 @@ class BookkeepingVectorDB:
 
         return formatted_results
 
-    def predict_category(self, merchant: str, product: str) -> Dict[str, Any]:
+    def predict_category(self, merchant: str, product: str, threshold: str) -> Dict[str, Any]:
         """
         预测交易类别
 
@@ -204,23 +175,58 @@ class BookkeepingVectorDB:
         Returns:
             预测结果，包含类别和置信度
         """
-        threshold = self.config.get(
-            "output", {}).get("similarity_threshold")
-        results = self.search_similar(merchant, product, top_k=1)
+        top_k = 5
+        results = self.search_similar(merchant, product, top_k=top_k)
 
-        if results and results[0]['similarity'] >= threshold:
+        if not results:
             return {
-                "category": results[0]['category'],
-                "confidence": results[0]['similarity'],
+                "category": None,
+                "confidence": 0.0,
+                "source": DATASET_COLLECTION_NAME
+            }
+
+        # 计算各类别的总权重
+        category_weights = {}
+
+        for result in results:
+            category = result['category']
+            similarity = result['similarity']
+
+            if category not in category_weights:
+                category_weights[category] = 0.0
+
+            category_weights[category] += similarity
+
+        # 使用softmax计算置信度
+        categories = list(category_weights.keys())
+        weights = np.array([category_weights[cat] for cat in categories])
+        
+        # 应用softmax函数
+        exp_weights = np.exp(weights - np.max(weights))  # 减去最大值以提高数值稳定性
+        softmax_probs = exp_weights / exp_weights.sum()
+        
+        # 找出概率最高的类别
+        best_idx = np.argmax(softmax_probs)
+        best_category = categories[best_idx]
+        best_confidence = softmax_probs[best_idx]
+        best_weight = category_weights[best_category]
+
+        # 计算调整后的阈值
+        adjusted_threshold = threshold * (top_k - 1)
+
+        # 如果最佳类别的总权重大于调整后的阈值，则返回该类别
+        if best_weight >= adjusted_threshold:
+            return {
+                "category": best_category,
+                "confidence": float(best_confidence),  # 使用softmax概率作为置信度
                 "source": DATASET_COLLECTION_NAME
             }
         else:
             return {
                 "category": None,
-                "confidence": 0.0,
-                "source": "unknown"
+                "confidence": float(best_confidence),  # 使用softmax概率作为置信度
+                "source": DATASET_COLLECTION_NAME
             }
-
     def get_all_categories(self) -> List[str]:
         """
         获取所有类别
