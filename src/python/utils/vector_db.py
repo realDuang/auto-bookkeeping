@@ -36,7 +36,9 @@ class BookkeepingVectorDB:
         self.config["EMBEDDING_MODEL"] = EMBEDDING_MODEL
         self.config["CHROMADB_PATH"] = CHROMADB_PATH
         self.config["similarity_threshold"] = self.config.get(
-            "output", {}).get("similarity_threshold")
+            "model", {}).get("similarity_threshold")
+        self.excluded_categories = self.config.get(
+            "model", {}).get("excluded_categories", [])
 
         # 初始化嵌入模型
         self.embedding_model = SentenceTransformer(EMBEDDING_MODEL)
@@ -104,6 +106,10 @@ class BookkeepingVectorDB:
 
             # 跳过没有类型的记录
             if not category:
+                continue
+
+            # 跳过在排除列表中的类别
+            if category in self.excluded_categories:
                 continue
 
             # 创建元数据
@@ -200,11 +206,11 @@ class BookkeepingVectorDB:
         # 使用softmax计算置信度
         categories = list(category_weights.keys())
         weights = np.array([category_weights[cat] for cat in categories])
-        
+
         # 应用softmax函数
         exp_weights = np.exp(weights - np.max(weights))  # 减去最大值以提高数值稳定性
         softmax_probs = exp_weights / exp_weights.sum()
-        
+
         # 找出概率最高的类别
         best_idx = np.argmax(softmax_probs)
         best_category = categories[best_idx]
@@ -227,6 +233,7 @@ class BookkeepingVectorDB:
                 "confidence": float(best_confidence),  # 使用softmax概率作为置信度
                 "source": DATASET_COLLECTION_NAME
             }
+
     def get_all_categories(self) -> List[str]:
         """
         获取所有类别

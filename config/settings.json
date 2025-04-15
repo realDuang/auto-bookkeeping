@@ -11,20 +11,11 @@
   "output": {
     "path": "out",
     "merged_filename": "merged_data.csv",
-    "processed_filename": "processed_data.csv",
-    "similarity_threshold": 0.9
+    "processed_filename": "processed_data.csv"
   },
 
-  "rules": {
-    "min_frequency": 2,
-    "keywords": {
-      "超市": "餐饮",
-      "生鲜": "餐饮",
-      "便利店": "餐饮",
-
-      "公交": "交通",
-      "地铁": "交通",
-      "打车": "交通"
-    }
+  "model": {
+    "similarity_threshold": 0.9,
+    "excluded_categories": ["旅行"]
   }
 }

@@ -36,7 +36,7 @@ class BookkeepingVectorDB:
         self.config["EMBEDDING_MODEL"] = EMBEDDING_MODEL
         self.config["CHROMADB_PATH"] = CHROMADB_PATH
         self.config["similarity_threshold"] = self.config.get(
-            "output", {}).get("similarity_threshold")
+            "model", {}).get("similarity_threshold")
 
         # 初始化嵌入模型
         self.embedding_model = SentenceTransformer(EMBEDDING_MODEL)
