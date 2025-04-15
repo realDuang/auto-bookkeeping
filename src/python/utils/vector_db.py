@@ -191,46 +191,29 @@ class BookkeepingVectorDB:
                 "source": DATASET_COLLECTION_NAME
             }
 
-        # 计算各类别的总权重
-        category_weights = {}
-
-        for result in results:
-            category = result['category']
-            similarity = result['similarity']
-
-            if category not in category_weights:
-                category_weights[category] = 0.0
-
-            category_weights[category] += similarity
-
-        # 使用softmax计算置信度
-        categories = list(category_weights.keys())
-        weights = np.array([category_weights[cat] for cat in categories])
-
+        # 进行softmax计算
+        categories = [result['category'] for result in results]
+        similarities = np.array([result['similarity'] for result in results])
+        
         # 应用softmax函数
-        exp_weights = np.exp(weights - np.max(weights))  # 减去最大值以提高数值稳定性
-        softmax_probs = exp_weights / exp_weights.sum()
+        exp_similarities = np.exp(similarities - np.max(similarities))  # 减去最大值以提高数值稳定性
+        softmax_probs = exp_similarities / exp_similarities.sum()
 
         # 找出概率最高的类别
         best_idx = np.argmax(softmax_probs)
         best_category = categories[best_idx]
-        best_confidence = softmax_probs[best_idx]
-        best_weight = category_weights[best_category]
+        best_confidence = float(softmax_probs[best_idx])
 
-        # 计算调整后的阈值
-        adjusted_threshold = threshold * (top_k - 1)
-
-        # 如果最佳类别的总权重大于调整后的阈值，则返回该类别
-        if best_weight >= adjusted_threshold:
+        if best_confidence >= threshold:
             return {
                 "category": best_category,
-                "confidence": float(best_confidence),  # 使用softmax概率作为置信度
+                "confidence": best_confidence,
                 "source": DATASET_COLLECTION_NAME
             }
         else:
             return {
                 "category": None,
-                "confidence": float(best_confidence),  # 使用softmax概率作为置信度
+                "confidence": best_confidence,
                 "source": DATASET_COLLECTION_NAME
             }
 
