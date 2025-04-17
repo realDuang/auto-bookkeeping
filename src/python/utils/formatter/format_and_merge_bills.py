@@ -1,7 +1,7 @@
 import os
 import pandas as pd
-from utils.wechat_formatter import wechat_format
-from utils.alipay_formatter import alipay_format
+from utils.formatter.wechat_formatter import wechat_format
+from utils.formatter.alipay_formatter import alipay_format
 
 
 def format_and_merge_bills(wechat_bill_files, alipay_bill_files):
